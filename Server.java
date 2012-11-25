@@ -11,6 +11,8 @@ import java.rmi.server.UnicastRemoteObject;
  */
 public class Server implements Hello {
 
+  public Server () {}
+
   /**
    * This port will be assigned to your group for use on EC2. For local testing, you can use any (nonstandard) port you wish.
    */
@@ -19,6 +21,14 @@ public class Server implements Hello {
   public String sayHello() {
     System.out.println("sayHello() was called");
     return "Hello, remote world!";
+  }
+
+  public int sell(String bookname, int copies){
+    return 1;
+  }
+
+  public int buy(String bookname, int copies){
+    return 0;
   }
 
   public static void main(String args[]) {

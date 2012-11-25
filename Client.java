@@ -12,9 +12,11 @@ public class Client {
       // Get the registry from the specified host (defaults to localhost)
       // on the port we designed for the registry in Server.
       Registry registry = LocateRegistry.getRegistry(host, Server.REGISTRY_PORT);
+      System.out.println(registry);
 
       // Get an object by looking up the name it was bound to.
       Hello stub = (Hello) registry.lookup("Hello");
+      System.out.println(stub);
 
       // Now we can make remote method calls on the object.
       String response = stub.sayHello();
