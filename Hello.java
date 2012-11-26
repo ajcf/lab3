@@ -12,10 +12,7 @@ public interface Hello extends Remote {
 
   int sell(String bookname, int copies) throws RemoteException;
 
-
-
   int buy(String bookname, int copies) throws RemoteException;
-
 
 }
 

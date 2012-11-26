@@ -4,6 +4,8 @@ import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+
+import java.util.LinkedList;
 	
 /**
  * An object implementing the Remote interface. This allows it to be
@@ -13,6 +15,7 @@ public class Server implements Hello {
 
   public Server () {}
 
+  private LinkedList<Book> stock = new LinkedList<Book>();
   /**
    * This port will be assigned to your group for use on EC2. For local testing, you can use any (nonstandard) port you wish.
    */
@@ -23,11 +26,57 @@ public class Server implements Hello {
     return "Hello, remote world!";
   }
 
+  private void printStock(){
+    System.out.println(stock.size() + " total books:");
+    for(Book b : stock){
+      System.out.println("  " + b.getTitle() + ": " + b.getCopies() + " copies.");
+    }
+  }
+
   public int sell(String bookname, int copies){
-    return 1;
+    int currentStock = 0;
+    Book book = null;
+    for(Book b : stock){
+      if(b.getTitle().equals(bookname)){ //== always returns false
+        //book exists in stock, so update number of copies
+        currentStock = b.getCopies();
+        //don't allow decreasing number of copies. that would be rude!
+        if(copies > 0) b.setCopies(currentStock + copies);
+        //returns stock before more copies were added
+        return currentStock;
+      }
+    }
+    book = new Book(bookname, copies);
+    stock.add(book);
+    return 0; //no copies previously existed
   }
 
   public int buy(String bookname, int copies){
+    for(Book b : stock){
+      if(b.getTitle().equals(bookname)){ //== always returns false
+        System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
+        if(copies <= b.getCopies()){
+          //all copies can immediately be bought
+          b.setCopies(b.getCopies() - copies);
+          return copies;
+        } else {
+          //Thread.sleep(10); //Figure this out later
+          if(b.getCopies() < copies){
+            //not enough copies were sold in 10 seconds
+            //so, we buy as many as there are
+            int bought = b.getCopies();
+            b.setCopies(0);
+            return bought;
+          } else {
+            //enough copies now exist! we buy all we need.
+            b.setCopies(b.getCopies() - copies);
+            return copies;
+          }
+        }
+      }
+    }
+    System.out.println("\"" + bookname + "\" not found.");
+    //return 0 if book is not found
     return 0;
   }
 
