@@ -29,7 +29,7 @@ public class Client {
       int abought = stub.buy("A Book", 2);
 
       System.out.println("Bought " + abought + " copies of \"A Book\".");
-      
+
       int aabought = stub.buy("A Book", 3);
 
       System.out.println("Bought " + aabought + " copies of \"A Book\".");
