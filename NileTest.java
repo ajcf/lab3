@@ -19,10 +19,15 @@ public class NileTest {
   }
 
   static boolean testConnection(String host){
-    sell("Book", 1, host, 1);
-    return buy("Book", 1, host, 1) == 1;
+    sell("ConnBook", 1, host, 1);
+    return buy("ConnBook", 1, host, 1) == 1;
   }
+  static boolean testSynchronization(String host){
+    sell("SynchBook", 10, host, 1);
+    return true;
 
+  }
+    
   static int sell (String title, int copies, String ip, int times) {
 
     String host = ip;

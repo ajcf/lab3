@@ -37,13 +37,17 @@ public class Server implements Hello {
     int currentStock = 0;
     Book book = null;
     for(Book b : stock){
-      if(b.getTitle().equals(bookname)){ //== always returns false
-        //book exists in stock, so update number of copies
-        currentStock = b.getCopies();
-        //don't allow decreasing number of copies. that would be rude!
-        if(copies > 0) b.setCopies(currentStock + copies);
-        //returns stock before more copies were added
-        return currentStock;
+      if(b.getTitle().equals(bookname)){
+        synchronized(b){
+          //book exists in stock, so update number of copies
+          currentStock = b.getCopies();
+          //don't allow decreasing number of copies. that would be rude!
+          if(copies > 0) b.setCopies(currentStock + copies);
+          //wakes up any threads waiting on this book
+          b.notify();
+          //returns stock before more copies were added
+          return currentStock;
+        }
       }
     }
     book = new Book(bookname, copies);
@@ -54,23 +58,34 @@ public class Server implements Hello {
   public int buy(String bookname, int copies){
     for(Book b : stock){
       if(b.getTitle().equals(bookname)){ //== always returns false
-        System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
-        if(copies <= b.getCopies()){
-          //all copies can immediately be bought
-          b.setCopies(b.getCopies() - copies);
-          return copies;
-        } else {
-          //Thread.sleep(10); //Figure this out later
-          if(b.getCopies() < copies){
-            //not enough copies were sold in 10 seconds
-            //so, we buy as many as there are
-            int bought = b.getCopies();
-            b.setCopies(0);
-            return bought;
-          } else {
-            //enough copies now exist! we buy all we need.
+        synchronized(b){
+          System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
+          if(copies <= b.getCopies()){
+            //all copies can immediately be bought
             b.setCopies(b.getCopies() - copies);
             return copies;
+          } else {
+            long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
+            int bought = 0;
+            while(System.currentTimeMillis() < time){
+              //this makes it wait only for the remainder of the 10 seconds.
+              try{
+                b.wait(time - System.currentTimeMillis());
+              }catch(InterruptedException e){
+                System.out.println("Interrupted: " + e);
+              }
+              if(b.getCopies() < copies){
+                //not enough copies were sold in 10 seconds
+                //so, we buy as many as there are
+                bought += b.getCopies();
+                b.setCopies(0);
+              } else {
+                //enough copies now exist! we buy all we need.
+                b.setCopies(b.getCopies() - copies);
+                return copies;
+              }
+            }
+            return bought;
           }
         }
       }
