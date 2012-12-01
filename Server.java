@@ -34,6 +34,7 @@ public class Server implements Hello {
   }
 
   public int sell(String bookname, int copies){
+    long timeStarted = System.currentTimeMillis();
     int currentStock = 0;
     Book book = null;
     for(Book b : stock){
@@ -46,6 +47,8 @@ public class Server implements Hello {
           //wakes up any threads waiting on this book
           b.notify();
           System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + currentStock + ".");
+          long timeToSell = System.currentTimeMillis() - timeStarted;
+          System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
           //returns stock before more copies were added
           return currentStock;
         }
@@ -53,10 +56,14 @@ public class Server implements Hello {
     }
     book = new Book(bookname, copies);
     stock.add(book);
+    System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + copies + ".");
+    long timeToSell = System.currentTimeMillis() - timeStarted;
+    System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
     return 0; //no copies previously existed
   }
 
   public int buy(String bookname, int copies){
+    long timeStarted = System.currentTimeMillis();
     for(Book b : stock){
       if(b.getTitle().equals(bookname)){
         synchronized(b){
@@ -64,6 +71,9 @@ public class Server implements Hello {
           if(copies <= b.getCopies()){
             //all copies can immediately be bought
             b.setCopies(b.getCopies() - copies);
+            //Calculate how many milliseconds have gone by since this method was started.
+            long timeToBuy = System.currentTimeMillis() - timeStarted;
+            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
             return copies;
           } else {
             long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
@@ -83,9 +93,13 @@ public class Server implements Hello {
               } else {
                 //enough copies now exist! we buy all we need.
                 b.setCopies(b.getCopies() - copies);
+                long timeToBuy = System.currentTimeMillis() - timeStarted;
+                System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
                 return copies;
               }
             }
+            long timeToBuy = System.currentTimeMillis() - timeStarted;
+            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
             return bought;
           }
         }
