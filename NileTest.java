@@ -17,6 +17,7 @@ public class NileTest {
       System.out.println("CONNECTION NOT MADE");
     }
     testSynchronization(host);
+    testMultiSynchronization(host);
   }
 
   static boolean testConnection(String host){
@@ -37,7 +38,19 @@ public class NileTest {
       System.out.println(e);
     }
   }
-    
+  static void testMultiSynchronization(String host){
+
+    Thread b = new Thread(new BuyThread("SynchBook2", 20, host));
+    b.start();
+    for(int i = 0; i < 10; i++){
+      new Thread(new SellThread("SynchBook2", 1, host)).start();
+    }
+    try{
+      b.join();
+    } catch(InterruptedException e){
+      System.out.println(e);
+    }
+  }
   static int sell (String title, int copies, String ip, int times) {
 
     String host = ip;
