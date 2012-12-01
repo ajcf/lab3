@@ -19,7 +19,7 @@ public class Server implements Hello {
   /**
    * This port will be assigned to your group for use on EC2. For local testing, you can use any (nonstandard) port you wish.
    */
-  public final static int REGISTRY_PORT = 53824;
+  public final static int REGISTRY_PORT = 54001;
 
   public String sayHello() {
     System.out.println("sayHello() was called");
