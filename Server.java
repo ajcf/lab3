@@ -45,6 +45,7 @@ public class Server implements Hello {
           if(copies > 0) b.setCopies(currentStock + copies);
           //wakes up any threads waiting on this book
           b.notify();
+          System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + currentStock + ".");
           //returns stock before more copies were added
           return currentStock;
         }

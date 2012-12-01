@@ -16,16 +16,26 @@ public class NileTest {
     } else {
       System.out.println("CONNECTION NOT MADE");
     }
+    testSynchronization(host);
   }
 
   static boolean testConnection(String host){
-    sell("ConnBook", 1, host, 1);
+    Thread s = new Thread(new SellThread("ConnBook", 1, host));
+    s.start();
     return buy("ConnBook", 1, host, 1) == 1;
   }
-  static boolean testSynchronization(String host){
-    sell("SynchBook", 10, host, 1);
-    return true;
 
+  static void testSynchronization(String host){
+    Thread b = new Thread(new BuyThread("SynchBook", 4, host));
+    b.start();
+    Thread s = new Thread(new SellThread("SynchBook", 2, host));
+    s.start();
+    try{
+      b.join();
+      s.join();
+    } catch(InterruptedException e){
+      System.out.println(e);
+    }
   }
     
   static int sell (String title, int copies, String ip, int times) {
