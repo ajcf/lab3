@@ -57,7 +57,7 @@ public class Server implements Hello {
 
   public int buy(String bookname, int copies){
     for(Book b : stock){
-      if(b.getTitle().equals(bookname)){ //== always returns false
+      if(b.getTitle().equals(bookname)){
         synchronized(b){
           System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
           if(copies <= b.getCopies()){
