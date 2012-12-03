@@ -23,10 +23,7 @@ public class NileTest {
   static boolean testConnection(String host){
     Thread s = new Thread(new SellThread("ConnBook", 1, 1, 0, host));
     s.start();
-    long timeStarted = System.currentTimeMillis();
     boolean bool = (buy("ConnBook", 1, host, 1) == 1);
-    long timeToServer = System.currentTimeMillis() - timeStarted;
-    System.out.println("It took " + timeToServer + " milliseconds to run over the network.");
     return bool;
   }
 
