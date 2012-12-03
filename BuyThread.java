@@ -31,7 +31,18 @@ class BuyThread implements Runnable {
       // Get an object by looking up the name it was bound to.
       Hello stub = (Hello) registry.lookup("Hello");
 
-      bought = stub.buy(bookname, copies);
+      int bought = 0;
+      System.out.println("Attempting to buy " + bookname + ", " + times + " times.");
+      for(int i = 0; i < times; i ++){
+        Thread.sleep(waittime);
+        //keep track of when the request was made
+        long timeStarted = System.currentTimeMillis();
+        bought = stub.buy(bookname, copies);
+        //record the time it takes to complete the request over the server.
+        long timeToBuy = System.currentTimeMillis() - timeStarted;
+        System.out.println("It took " + timeToBuy + " milliseconds buy the book over the server.");
+        System.out.println(copies + " copies of " + bookname + " bought, there were originally " + bought);
+      }
 
       System.out.println("Bought " + bought + " copies of " + bookname);
 

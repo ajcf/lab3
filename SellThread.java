@@ -30,7 +30,13 @@ class SellThread implements Runnable{
       System.out.println("Attempting to sell " + bookname + ", " + times + " times.");
       for(int i = 0; i < times; i ++){
         Thread.sleep(waittime);
-        sold = stub.sell(bookname, copies);
+        //keep track of when the request was made
+        long timeStarted = System.currentTimeMillis();
+        sold = stub.sell(bookname, copies);        
+        //record the time it takes to complete the request over the server.
+        long timeToSell = System.currentTimeMillis() - timeStarted;
+        System.out.println("It took " + timeToSell + " milliseconds sell the book over the server.");
+        
         System.out.println(copies + " copies of " + bookname + " sold, there were originally " + sold);
       }
     } catch (Exception e) {
