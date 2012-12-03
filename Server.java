@@ -48,7 +48,7 @@ public class Server implements Hello {
           b.notify();
           System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + currentStock + ".");
           long timeToSell = System.currentTimeMillis() - timeStarted;
-          System.out.println("It took " + timeToSell + " milliseconds sell the book locally.");
+          System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
           //returns stock before more copies were added
           return currentStock;
         }
@@ -58,7 +58,7 @@ public class Server implements Hello {
     stock.add(book);
     System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + copies + ".");
     long timeToSell = System.currentTimeMillis() - timeStarted;
-    System.out.println("It took " + timeToSell + " milliseconds sell the book locally.");
+    System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
     return 0; //no copies previously existed
   }
 
@@ -73,7 +73,7 @@ public class Server implements Hello {
             b.setCopies(b.getCopies() - copies);
             //Calculate how many milliseconds have gone by since this method was started.
             long timeToBuy = System.currentTimeMillis() - timeStarted;
-            System.out.println("It took " + timeToBuy + " milliseconds to buy the book locally.");
+            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
             return copies;
           } else {
             long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
@@ -94,12 +94,12 @@ public class Server implements Hello {
                 //enough copies now exist! we buy all we need.
                 b.setCopies(b.getCopies() - copies);
                 long timeToBuy = System.currentTimeMillis() - timeStarted;
-                System.out.println("It took " + timeToBuy + " milliseconds to buy the book locally.");
+                System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
                 return copies;
               }
             }
             long timeToBuy = System.currentTimeMillis() - timeStarted;
-            System.out.println("It took " + timeToBuy + " milliseconds to buy the book locally.");
+            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
             return bought;
           }
         }
@@ -112,6 +112,7 @@ public class Server implements Hello {
     while(System.currentTimeMillis() < time){
       //this makes it wait only for the remainder of the 10 seconds.
       try{
+        System.out.println("Waitint for " + (time - System.currentTimeMillis()) + " more milliseconds.");
         b.wait(time - System.currentTimeMillis());
       }catch(InterruptedException e){
         System.out.println("Interrupted: " + e);
@@ -128,7 +129,7 @@ public class Server implements Hello {
         //enough copies now exist! we buy all we need.
         b.setCopies(b.getCopies() - copies);
         long timeToBuy = System.currentTimeMillis() - timeStarted;
-        System.out.println("It took " + timeToBuy + " milliseconds to buy the book locally.");
+        System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
         return copies;
       }
     }
