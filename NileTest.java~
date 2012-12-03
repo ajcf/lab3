@@ -21,7 +21,7 @@ public class NileTest {
   }
 
   static boolean testConnection(String host){
-    Thread s = new Thread(new SellThread("ConnBook", 1, 1, 0, host));
+    Thread s = new Thread(new SellThread("ConnBook", 1, host));
     s.start();
     long timeStarted = System.currentTimeMillis();
     boolean bool = (buy("ConnBook", 1, host, 1) == 1);
@@ -31,9 +31,9 @@ public class NileTest {
   }
 
   static void testSynchronization(String host){
-    Thread b = new Thread(new BuyThread("SynchBook", 4, 1, 0, host));
+    Thread b = new Thread(new BuyThread("SynchBook", 4, host));
     b.start();
-    Thread s = new Thread(new SellThread("SynchBook", 2, 1, 0, host));
+    Thread s = new Thread(new SellThread("SynchBook", 2, host));
     s.start();
     try{
       b.join();
@@ -44,21 +44,17 @@ public class NileTest {
   }
   static void testMultiSynchronization(String host){
 
-    Thread b = new Thread(new BuyThread("SynchBook2", 20, 1, 0, host));
+    Thread b = new Thread(new BuyThread("SynchBook2", 20, host));
     b.start();
-    Thread c = new Thread(new SellThread("SynchBook2", 1, 10, 0, host));
-    c.start();
+    for(int i = 0; i < 10; i++){
+      new Thread(new SellThread("SynchBook2", 1, host)).start();
+    }
     try{
       b.join();
-      c.join();
     } catch(InterruptedException e){
       System.out.println(e);
     }
   }
-  
-  //staic void lotsOfRequests(String host){
-    
-  
   static int sell (String title, int copies, String ip, int times) {
 
     String host = ip;

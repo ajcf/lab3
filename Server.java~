@@ -1,12 +1,12 @@
 package lab3;
- 
+	
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.util.LinkedList;
- 
+	
 /**
  * An object implementing the Remote interface. This allows it to be
  * called through RMI.
@@ -106,33 +106,10 @@ public class Server implements Hello {
       }
     }
     System.out.println("\"" + bookname + "\" not found.");
-    Book b = new Book(bookname, 0);
-    long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
-    int bought = 0;
-    while(System.currentTimeMillis() < time){
-      //this makes it wait only for the remainder of the 10 seconds.
-      try{
-        b.wait(time - System.currentTimeMillis());
-      }catch(InterruptedException e){
-        System.out.println("Interrupted: " + e);
-      }
-      if(b.getCopies() < copies){
-        //not enough copies were sold in 10 seconds
-        //so, we buy as many as there are
-        bought += b.getCopies();
-        b.setCopies(0);
-      } else {
-        //enough copies now exist! we buy all we need.
-        b.setCopies(b.getCopies() - copies);
-        long timeToBuy = System.currentTimeMillis() - timeStarted;
-        System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-        return copies;
-      }
-    }
-    //return 0 if all of the above doesn't work out.
+    //return 0 if book is not found
     return 0;
   }
-  
+
   public static void main(String args[]) {
 
     try {

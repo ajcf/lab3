@@ -8,22 +8,18 @@ class BuyThread implements Runnable {
   Thread runner;
   String bookname;
   int copies;
-  int times;
-  int waittime;
   String ipAddress;
   int bought;
- 
+
   public BuyThread(){}
 
-  public BuyThread(String book, int num, int reps, int pause, String ip){
+  public BuyThread(String book, int num, String ip){
     bookname = book;
     copies = num;
-    times = reps;
-    waittime = pause;
     ipAddress = ip;
     bought = 0;
   }
-  
+
   public void run(){
     try {
       Registry registry = LocateRegistry.getRegistry(ipAddress, Server.REGISTRY_PORT);
