@@ -112,7 +112,7 @@ public class Server implements Hello {
     while(System.currentTimeMillis() < time){
       //this makes it wait only for the remainder of the 10 seconds.
       try{
-        System.out.println("Waitint for " + (time - System.currentTimeMillis()) + " more milliseconds.");
+        System.out.println("Waiting for " + (time - System.currentTimeMillis()) + " more milliseconds.");
         b.wait(time - System.currentTimeMillis());
       }catch(InterruptedException e){
         System.out.println("Interrupted: " + e);
