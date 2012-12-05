@@ -123,10 +123,7 @@ public class Server implements Hello {
           //so, we buy as many as there are
           bought += b.getCopies();
           b.setCopies(0);
-          long timeToBuy = System.currentTimeMillis() - timeStarted;
-          System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-          return bought;
-        } else {
+       } else {
           //enough copies now exist! we buy all we need.
           b.setCopies(b.getCopies() - copies);
           long timeToBuy = System.currentTimeMillis() - timeStarted;
@@ -134,9 +131,10 @@ public class Server implements Hello {
           return copies;
         }
       }
+      long timeToBuy = System.currentTimeMillis() - timeStarted;
+      System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+      return bought;
     }
-    //return 0 if all of the above doesn't work out.
-    return 0;
   }
   
   public static void main(String args[]) {
