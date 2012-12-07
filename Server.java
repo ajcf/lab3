@@ -5,7 +5,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-import java.util.LinkedList;
+import java.util.*;
+import java.util.concurrent.*;
  
 /**
  * An object implementing the Remote interface. This allows it to be
@@ -15,16 +16,17 @@ public class Server implements Hello {
 
   public Server () {}
 
-  private LinkedList<Book> stock = new LinkedList<Book>();
-  /**
-   * This port will be assigned to your group for use on EC2. For local testing, you can use any (nonstandard) port you wish.
-   */
-  public final static int REGISTRY_PORT = 54001;
-
   public String sayHello() {
     System.out.println("sayHello() was called");
     return "Hello, remote world!";
   }
+
+  private CopyOnWriteArrayList<Book> stock = new CopyOnWriteArrayList<Book>();
+  private Hashtable<Book, CopyOnWriteArrayList<Object>> numbers = new Hashtable<Book, CopyOnWriteArrayList<Object>>();
+  /**
+   * This port will be assigned to your group for use on EC2. For local testing, you can use any (nonstandard) port you wish.
+   */
+  public final static int REGISTRY_PORT = 54001;
 
   private void printStock(){
     System.out.println(stock.size() + " total books:");
@@ -39,13 +41,16 @@ public class Server implements Hello {
     Book book = null;
     for(Book b : stock){
       if(b.getTitle().equals(bookname)){
+        if(!numbers.containsKey(b)){
+          numbers.put(b, new CopyOnWriteArrayList<Object>());
+        }
         synchronized(b){
           //book exists in stock, so update number of copies
           currentStock = b.getCopies();
           //don't allow decreasing number of copies. that would be rude!
           if(copies > 0) b.setCopies(currentStock + copies);
           //wakes up any threads waiting on this book
-          b.notify();
+          numbers.get(b).get(0).notify();
           System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + currentStock + ".");
           long timeToSell = System.currentTimeMillis() - timeStarted;
           System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
@@ -54,6 +59,7 @@ public class Server implements Hello {
         }
       }
     }
+
     book = new Book(bookname, copies);
     stock.add(book);
     System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + copies + ".");
@@ -66,6 +72,11 @@ public class Server implements Hello {
     long timeStarted = System.currentTimeMillis();
     for(Book b : stock){
       if(b.getTitle().equals(bookname)){
+        if(!numbers.containsKey(b)){
+          numbers.put(b, new CopyOnWriteArrayList<Object>());
+        }
+        Object bookmark = new Object();
+        numbers.get(b).add(bookmark);
         synchronized(b){
           System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
           if(copies <= b.getCopies()){
@@ -74,6 +85,7 @@ public class Server implements Hello {
             //Calculate how many milliseconds have gone by since this method was started.
             long timeToBuy = System.currentTimeMillis() - timeStarted;
             System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+            numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
             return copies;
           } else {
             long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
@@ -81,7 +93,7 @@ public class Server implements Hello {
             while(System.currentTimeMillis() < time){
               //this makes it wait only for the remainder of the 10 seconds.
               try{
-                b.wait(time - System.currentTimeMillis());
+                bookmark.wait(time - System.currentTimeMillis());
               }catch(InterruptedException e){
                 System.out.println("Interrupted: " + e);
               }
@@ -95,11 +107,13 @@ public class Server implements Hello {
                 b.setCopies(b.getCopies() - copies);
                 long timeToBuy = System.currentTimeMillis() - timeStarted;
                 System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+                numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
                 return copies;
               }
             }
             long timeToBuy = System.currentTimeMillis() - timeStarted;
             System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+            numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
             return bought;
           }
         }
@@ -109,12 +123,17 @@ public class Server implements Hello {
     Book b = new Book(bookname, 0);
     long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
     int bought = 0;
+    if(!numbers.containsKey(b)){
+      numbers.put(b, new CopyOnWriteArrayList<Object>());
+    }
+    Object bookmark = new Object();
+    numbers.get(b).add(bookmark);
     synchronized(b){
       while(System.currentTimeMillis() < time){
         //this makes it wait only for the remainder of the 10 seconds.
         try{
           System.out.println("Waiting for " + (time - System.currentTimeMillis()) + " more milliseconds.");
-          b.wait(time - System.currentTimeMillis());
+          bookmark.wait(time - System.currentTimeMillis());
         }catch(InterruptedException e){
           System.out.println("Interrupted: " + e);
         }
@@ -128,11 +147,13 @@ public class Server implements Hello {
           b.setCopies(b.getCopies() - copies);
           long timeToBuy = System.currentTimeMillis() - timeStarted;
           System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+          numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
           return copies;
         }
       }
       long timeToBuy = System.currentTimeMillis() - timeStarted;
       System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+          numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
       return bought;
     }
   }
@@ -158,7 +179,5 @@ public class Server implements Hello {
       System.err.println("Server exception: " + e.toString());
       e.printStackTrace();
     }
-
   }
-
 }
