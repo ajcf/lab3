@@ -1,5 +1,5 @@
 package lab3;
- 
+
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -7,7 +7,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 import java.util.*;
 import java.util.concurrent.*;
- 
+
 /**
  * An object implementing the Remote interface. This allows it to be
  * called through RMI.
@@ -35,129 +35,129 @@ public class Server implements Hello {
     }
   }
 
-  public int sell(String bookname, int copies){
+  public int sell(String bookname, int copies) throws RemoteException{
     long timeStarted = System.currentTimeMillis();
+    if(copies < 0){
+      throw new RemoteException();
+    }
     int currentStock = 0;
-    Book book = null;
-    for(Book b : stock){
-      if(b.getTitle().equals(bookname)){
-        if(!numbers.containsKey(b)){
-          numbers.put(b, new CopyOnWriteArrayList<Object>());
-        }
-        synchronized(b){
-          //book exists in stock, so update number of copies
-          currentStock = b.getCopies();
-          //don't allow decreasing number of copies. that would be rude!
-          if(copies > 0) b.setCopies(currentStock + copies);
-          //wakes up any threads waiting on this book
-          numbers.get(b).get(0).notify();
-          System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + currentStock + ".");
-          long timeToSell = System.currentTimeMillis() - timeStarted;
-          System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
-          //returns stock before more copies were added
-          return currentStock;
-        }
+    Book b = null;
+    for(Book book : stock){
+      if(book.getTitle().equals(bookname)){
+        b = book;
       }
     }
+    if(b == null){
+      synchronized(stock){
+        b = new Book(bookname, 0);
+        stock.add(b);
+      }
+    }
+    if(!numbers.containsKey(b)){
+      numbers.put(b, new CopyOnWriteArrayList<Object>());
+    }
+    synchronized(b){
+      //book exists in stock, so update number of copies
+      currentStock = b.getCopies();
+      //don't allow decreasing number of copies. that would be rude!
+      if(copies > 0) b.setCopies(currentStock + copies);
+      //wakes up any threads waiting on this book
+      b.notifyAll();
+      System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + b.getCopies() + ".");
+      long timeToSell = System.currentTimeMillis() - timeStarted;
+      System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
+      //returns stock before more copies were added
 
-    book = new Book(bookname, copies);
-    stock.add(book);
-    System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + copies + ".");
-    long timeToSell = System.currentTimeMillis() - timeStarted;
-    System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
-    return 0; //no copies previously existed
+      return currentStock;
+    }
   }
 
   public int buy(String bookname, int copies){
     long timeStarted = System.currentTimeMillis();
-    for(Book b : stock){
-      if(b.getTitle().equals(bookname)){
-        if(!numbers.containsKey(b)){
-          numbers.put(b, new CopyOnWriteArrayList<Object>());
-        }
-        Object bookmark = new Object();
-        numbers.get(b).add(bookmark);
-        synchronized(b){
-          System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
-          if(copies <= b.getCopies()){
-            //all copies can immediately be bought
-            b.setCopies(b.getCopies() - copies);
-            //Calculate how many milliseconds have gone by since this method was started.
-            long timeToBuy = System.currentTimeMillis() - timeStarted;
-            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-            numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-            return copies;
-          } else {
-            long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
-            int bought = 0;
-            while(System.currentTimeMillis() < time){
-              //this makes it wait only for the remainder of the 10 seconds.
-              try{
-                bookmark.wait(time - System.currentTimeMillis());
-              }catch(InterruptedException e){
-                System.out.println("Interrupted: " + e);
-              }
-              if(b.getCopies() < copies){
-                //not enough copies were sold in 10 seconds
-                //so, we buy as many as there are
-                bought += b.getCopies();
-                b.setCopies(0);
-              } else {
-                //enough copies now exist! we buy all we need.
-                b.setCopies(b.getCopies() - copies);
-                long timeToBuy = System.currentTimeMillis() - timeStarted;
-                System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-                numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-                return copies;
-              }
-            }
-            long timeToBuy = System.currentTimeMillis() - timeStarted;
-            System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-            numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-            return bought;
-          }
-        }
+    Book b = null;
+    for(Book book : stock){
+      if(book.getTitle().equals(bookname)){
+        b = book;
+        break;
       }
     }
-    System.out.println("\"" + bookname + "\" not found.");
-    Book b = new Book(bookname, 0);
-    long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
-    int bought = 0;
+    if(b == null){
+      try{
+        Thread.sleep(10);
+      }catch(Exception e){
+        System.out.println(e);
+      }
+      for(Book book : stock){
+        if(book.getTitle().equals(bookname)){
+          b = book;
+          break;
+        }
+      }
+      if(b == null){
+        return 0;
+      }
+    }
     if(!numbers.containsKey(b)){
       numbers.put(b, new CopyOnWriteArrayList<Object>());
     }
     Object bookmark = new Object();
     numbers.get(b).add(bookmark);
+    System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
+    //int bought = 0;
     synchronized(b){
-      while(System.currentTimeMillis() < time){
-        //this makes it wait only for the remainder of the 10 seconds.
-        try{
-          System.out.println("Waiting for " + (time - System.currentTimeMillis()) + " more milliseconds.");
-          bookmark.wait(time - System.currentTimeMillis());
-        }catch(InterruptedException e){
-          System.out.println("Interrupted: " + e);
-        }
-        if(b.getCopies() < copies){
+      if(copies <= b.getCopies()){
+          //all copies can immediately be bought
+        b.setCopies(b.getCopies() - copies);
+          //Calculate how many milliseconds have gone by since this method was started.
+        long timeToBuy = System.currentTimeMillis() - timeStarted;
+        System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+        numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
+        return copies;
+      } else {
+          long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
+          int bought=0;
           //not enough copies were sold in 10 seconds
           //so, we buy as many as there are
           bought += b.getCopies();
           b.setCopies(0);
-       } else {
-          //enough copies now exist! we buy all we need.
-          b.setCopies(b.getCopies() - copies);
-          long timeToBuy = System.currentTimeMillis() - timeStarted;
-          System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-          numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-          return copies;
+          while(System.currentTimeMillis() < time){
+            System.out.println("step into loop");
+            //this makes it wait only for the remainder of the 10 seconds.
+            try{
+              System.out.println("Waiting for "+bookname);
+              b.wait(time - System.currentTimeMillis());
+            }catch(InterruptedException e){
+             System.out.println("Interrupted: " + e);
+           }
+           if(bookmark == numbers.get(b).get(0)){
+             if(b.getCopies() < (copies-bought)){
+                //not enough copies were sold in 10 seconds
+                //so, we buy as many as there are
+              bought += b.getCopies();
+              System.out.println("bought " + bought + " copies.");
+              b.setCopies(0);
+            } else {
+                //enough copies now exist! we buy all we need.
+              b.setCopies(b.getCopies() - (copies-bought));
+              long timeToBuy = System.currentTimeMillis() - timeStarted;
+              System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+              numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
+              b.notifyAll();
+              return copies;
+            }
+          }
         }
+        long timeToBuy = System.currentTimeMillis() - timeStarted;
+        System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
+        numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
+        b.notifyAll();
+        return bought;
       }
-      long timeToBuy = System.currentTimeMillis() - timeStarted;
-      System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
-          numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-      return bought;
     }
+
+    
   }
-  
+
   public static void main(String args[]) {
 
     try {

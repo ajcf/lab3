@@ -7,7 +7,7 @@ public class Book {
   public Book(String title, int copies) {
     System.out.println("Creating new book with title \"" + title + "\" and " + copies + " copies.");
     this.title = title;
-    if(copies > 0){
+    if(copies >= 0){
       this.copies = copies;
     } else {
       this.copies = 0;
