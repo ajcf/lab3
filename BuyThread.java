@@ -6,16 +6,17 @@ import java.rmi.registry.Registry;
 class BuyThread implements Runnable {
 
   Thread runner;
-  String bookname;
-  int copies;
-  int times;
-  int waittime;
-  String ipAddress;
-  int bought;
+  String bookname; // The name of the book you want this thread to buy.
+  int copies; // The number of copies of the above book that you would like to buy.
+  int times; // The number of times you would like to buy that many copies of that book.
+  int waittime;  // The amount of time to wait between buying that many copies once and buying that many copies again.
+  String ipAddress; //The IP address of the server.
+  int bought; //How many books were succesfully bought. 
  
   public BuyThread(){}
 
   public BuyThread(String book, int num, int reps, int pause, String ip){
+    //Standard constructor for the BuyThread
     bookname = book;
     copies = num;
     times = reps;
@@ -33,10 +34,12 @@ class BuyThread implements Runnable {
 
       int bought = 0;
       System.out.println("Attempting to buy " + bookname + ", " + times + " times.");
+      //this for loop will repeat the buying action many times.
       for(int i = 0; i < times; i ++){
         Thread.sleep(waittime);
         //keep track of when the request was made
         long timeStarted = System.currentTimeMillis();
+        //make a call to buy this many copies of this book.
         bought = stub.buy(bookname, copies);
         //record the time it takes to complete the request over the server.
         long timeToBuy = System.currentTimeMillis() - timeStarted;
