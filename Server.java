@@ -37,30 +37,23 @@ public class Server implements Hello {
 
   public int sell(String bookname, int copies) throws RemoteException{
     long timeStarted = System.currentTimeMillis();
-
-    //Do not ask to sell negative books. 
     if(copies < 0){
       throw new RemoteException();
     }
     int currentStock = 0;
     Book b = null;
-    //Check to see if the book has been created as an object before. 
     for(Book book : stock){
-      //If the book has been created as an object before, remember that object. 
       if(book.getTitle().equals(bookname)){
         b = book;
       }
     }
-    //If the book has never been created as an object before, then create a new book. 
     if(b == null){
       synchronized(stock){
         b = new Book(bookname, 0);
         stock.add(b);
       }
     }
-    //Check to see if there is an instance of this book in numbers.
     if(!numbers.containsKey(b)){
-      //If there isn't, put a copy of one in. 
       numbers.put(b, new CopyOnWriteArrayList<Object>());
     }
     synchronized(b){
@@ -71,73 +64,59 @@ public class Server implements Hello {
       //wakes up any threads waiting on this book
       b.notifyAll();
       System.out.println("Someone just sold " + copies + " of " + bookname + ". There are now " + b.getCopies() + ".");
-      //Returns how much time it took to sell the book.
       long timeToSell = System.currentTimeMillis() - timeStarted;
       System.out.println("It took " + timeToSell + " milliseconds to process the request on the server.");
       //returns stock before more copies were added
 
-      //let the calling method know the current stock of the book you now have.
       return currentStock;
     }
   }
 
   public int buy(String bookname, int copies){
-    //Keep track of when the method was started so we can keep track of how long the method takes.
     long timeStarted = System.currentTimeMillis();
     Book b = null;
-    //Check to see if the book item has ever been created before. 
     for(Book book : stock){
       if(book.getTitle().equals(bookname)){
-        //If the book item has been created, keep track of the book object.
         b = book;
         break;
       }
     }
     System.out.println(b);
-    //If the book object has never been created before.
     if(b == null){
       try{
-        //Wait ten seconds.
         Thread.sleep(10000);
       }catch(Exception e){
         System.out.println(e);
       }
-      //then check again if the book item has been created.
       for(Book book : stock){
-        //If the book item has been created, keep track of the book object.
         if(book.getTitle().equals(bookname)){
           b = book;
           break;
         }
       }
       if(b == null){
-        //If after 10 seconds the book still has never been created, then we obviously can't buy it so we just quit. 
         System.out.println("Book Nonexistant in server, gave up.");
         return 0;
       }
     }
-
-    //If there isn't an instance of this book in numbers, then create one. 
     if(!numbers.containsKey(b)){
       numbers.put(b, new CopyOnWriteArrayList<Object>());
     }
+    //add ourselves to the queue of threads waiting for the book.
     Object bookmark = new Object();
     numbers.get(b).add(bookmark);
     System.out.println("Someone's buying " + b.getTitle() + ". We have " + b.getCopies() + " copies, and they want " + copies + " copies.");
     //int bought = 0;
-    //Ensure you have exculsive acess to the book you are trying to buy. 
     synchronized(b){
       if(copies <= b.getCopies()){
-          //all copies can immediately be bought so buy them. 
+          //all copies can immediately be bought
         b.setCopies(b.getCopies() - copies);
           //Calculate how many milliseconds have gone by since this method was started.
         long timeToBuy = System.currentTimeMillis() - timeStarted;
         System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
         numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
-        //return how many copies you bought. 
         return copies;
       } else {
-        //If you can't immediatly buy all the copies you need.
           long time = System.currentTimeMillis() + (long)10000; //picks a time 10 seconds from now.
           int bought=0;
           //not enough copies were sold in 10 seconds
@@ -170,7 +149,6 @@ public class Server implements Hello {
             }
           }
         }
-        //Calculate how long it took to buy all the copies. 
         long timeToBuy = System.currentTimeMillis() - timeStarted;
         System.out.println("It took " + timeToBuy + " milliseconds to buy this.");
         numbers.get(b).remove(numbers.get(b).indexOf(bookmark));
